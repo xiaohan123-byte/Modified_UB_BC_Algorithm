@@ -7,6 +7,7 @@ import heapq
 import time
 
 class UBnBC:
+    
     def __init__(self, branching_rule="frac", node_rule="dfs", ub=np.inf):
         """Unified Branch and Benders Cut
 
@@ -26,13 +27,13 @@ class UBnBC:
             - "bfs": Breadth first search
         """
         self.branching_rule = branching_rule  
-        self.node_rule = node_rule # 好像没有被用到
+        self.node_rule = node_rule # 应该没有被用到，待check
         self.ub=ub # 全局ub
         self.notbranched = [] # 还未被分支的node的变量名称列表
-        self.xs=[6 for _ in range(len(stations))] # 初始解 给每个站都分配6块电池
-        self.xl=[6 for _ in range(len(stations))] 
+        self.xs=[6 for _ in range(len(stations))] # 初始解 给每个站都分配6块小电池
+        self.xl=[6 for _ in range(len(stations))] # 初始解 给每个站都分配6块大电池
 
-    def __call__(   # 在你将实例当作函数调用时才会被调用
+    def __call__(   # 在你将实例当作函数调用时才会被调用，对象示例.xx()
         self,
         int_tol: float = 1e-6,   # 容差
         max_iter: int = 10000,   # 最大迭代次数
@@ -43,13 +44,17 @@ class UBnBC:
         start_time = time.time()
         
         # Initialize values
-        explored = 0 #已经被探索的节点数
+        explored = 0 #迭代次数
         fathomed = 0 #已经被查明（剪枝）的节点数
         Z = [] # candidate solution set
 
+        min_improved_lb = np.inf # 集合Z中的最优下界值
+        min_solution = None # 集合Z中的最优下界值对应的解
+        modified3 = True
+
         # Select rootnode
         baseMP=BuildMasterP(num_scenario,prob)  # 这俩是全局变量
-        base_notbranched=[]  # 初始化未分支的结点的变量名称，rootnode的变量是全没有分支的
+        base_notbranched=[]  # 初始化未分支的结点的变量名称列表，rootnode的变量是全没有分支的--这就是论文中的待分支变量集合V
         for i in stations:
             base_notbranched.append(baseMP._XS[i].VarName)
             base_notbranched.append(baseMP._XL[i].VarName)
@@ -78,10 +83,10 @@ class UBnBC:
             elif var.VarName.startswith('XL'):
                 base_notbranched.append(var.VarName)'''
         
-        self.relaxP = [] # 松弛子问题的所有场景下的变量列表
-        self.MW = [] #不知道MW是什么，先不管吧
+        self.relaxP = [] # 松弛子问题的所有场景下的求解对象
+        self.MW = [] # MW问题的所有场景下的求解对象
         for i in range(num_scenario):
-            self.relaxP.append(BuildRelaxP(i,self.xs,self.xl))  # 返回的是松弛子问题的变量列表
+            self.relaxP.append(BuildRelaxP(i,self.xs,self.xl)) 
             self.MW.append(BuildMW(i,self.xs,self.xl,self.xs,self.xl,10))
 
         # 创建根节点
@@ -101,15 +106,17 @@ class UBnBC:
         # queue 表示分支定界树上的pendant node 论文里面的N
         queue = []
         explored = explored + 1
+
+        # 为什么这里没有把根节点加入queue？
+
         # 用来迭代M-W点
         XS0 = np.array([0 for _ in range(len(stations))]) #初始化为0列表
         XL0 = np.array([0 for _ in range(len(stations))])
 
         # Iterate until all good nodes are explored
         while explored < max_iter:
-
             # Solve the master problem
-            node.solve()
+            node.solve()  # 求到整数最优
             print(f"current UB:{self.ub}")
 
             # Check feasibility
@@ -139,7 +146,7 @@ class UBnBC:
                     break
 
             else:
-                #Compute SP_w(x) for each w
+                # Compute SP_w(x) for each w
                 flag_optimality = 1  #用于判断是否添加pareto optimal cut  等于0就添加
                 ySP_opt=[]   #记录每个子问题的线性松弛问题的目标函数值
                 sum_yrelaxSP=0 #记录每个场景下子问题的加权目标和
@@ -181,7 +188,8 @@ class UBnBC:
                         if verbose:
                             print(f"Fathom node {explored}: cTx+yrelaxSP>UB")
                         if len(queue) > 0:
-                            node = self._pop_next(queue)
+                            #node = self._pop_next(queue)
+                            _,_,node = heapq.heappop(queue)
                             explored = explored + 1
                             continue
                         else:
@@ -189,16 +197,37 @@ class UBnBC:
                     else: # 存下这个整数解
                         Z.append((node.XS,node.XL,improved_lb,node.cTx))
 
-                        #input("按下回车键继续...")
-                        
-                        #Solve subproblem for all scenario
-                        sum_yH=0
-                        for i in range(num_scenario):
-                            yH = Heuristic_gurobi(i,node.XS,node.XL)
-                            sum_yH += prob[i]*yH
-                        improved_ub = node.cTx+sum_yH
-                        if improved_ub<self.ub:
-                            self.ub = improved_ub
+                        if modified3:
+
+                            # 如果最优下界更新了，记录最小的improved_lb解，求子问题到整数最优
+                            if improved_lb < min_improved_lb:
+                                min_improved_lb = improved_lb
+                                min_solution = Z.pop(0)
+                                ysubP=solve_subP(min_solution[0],min_solution[1])
+                                cur_opt=min_solution[3]+ysubP
+                                if cur_opt<=self.ub:
+                                    self.ub=cur_opt
+                                    self.XS_opt,self.XL_opt=min_solution[0],min_solution[1]
+                            else:
+                                #Solve subproblem for all scenario
+                                sum_yH=0
+                                for i in range(num_scenario):
+                                    yH = Heuristic_gurobi(i,node.XS,node.XL)
+                                    sum_yH += prob[i]*yH
+                                improved_ub = node.cTx+sum_yH
+                                if improved_ub<self.ub:
+                                    self.ub = improved_ub
+
+
+                        else:
+                            #Solve subproblem for all scenario
+                            sum_yH=0
+                            for i in range(num_scenario):
+                                yH = Heuristic_gurobi(i,node.XS,node.XL)
+                                sum_yH += prob[i]*yH
+                            improved_ub = node.cTx+sum_yH
+                            if improved_ub<self.ub:
+                                self.ub = improved_ub
 
                         # branch on a new variable
                         if node.notbranched:
@@ -219,18 +248,19 @@ class UBnBC:
                             break
                         #node = self._pop_next(queue)
 
-
+        print(f"candidate number:{len(Z)}")
         # Rank Z by ascending order
-        Z_sorted = sorted(Z, key=lambda x: x[2])
-        print(Z_sorted)
-        while len(Z_sorted)>0:
-            cur_Z = Z_sorted.pop(0)
-            if cur_Z[2]<=self.ub:
-                ysubP=solve_subP(cur_Z[0],cur_Z[1])
-                cur_opt=cur_Z[3]+ysubP
-                if cur_opt<=self.ub:
-                    self.ub=cur_opt
-                    self.XS_opt,self.XL_opt=cur_Z[0],cur_Z[1]
+        if Z:
+            Z_sorted = sorted(Z, key=lambda x: x[2])
+            print(Z_sorted)
+            while len(Z_sorted)>0:
+                cur_Z = Z_sorted.pop(0)
+                if cur_Z[2]<=self.ub:
+                    ysubP=solve_subP(cur_Z[0],cur_Z[1])
+                    cur_opt=cur_Z[3]+ysubP
+                    if cur_opt<=self.ub:
+                        self.ub=cur_opt
+                        self.XS_opt,self.XL_opt=cur_Z[0],cur_Z[1]
         
         end_time = time.time()
         print('UCnBC run time: ',end_time-start_time)

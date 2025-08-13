@@ -10,8 +10,8 @@ import time
 random.seed(2)
 # input parameters
 
-num_scenario = 10
-prob = (0.1,0.1)*5  # 每个scenario的概率都是0.1
+num_scenario = 20
+prob = (0.05,0.05)*10  # 每个scenario的概率都是0.1
 
 I=21  #电池数量上限
 cS = 200 #初始200，300gurobi差 标准续航电池的配置费用
@@ -42,20 +42,20 @@ T_matrix = -np.eye(2*len(stations))
 #print(T_matrix)
 
 # 从文件读取
-with open('Modified_UB_BC_Algorithm/UBBC/data/data_case.json', 'r') as f:
+with open('efficiency_data/data_13e.json', 'r') as f:
     path_data = json.load(f)
 #print(path_data)
-dist = pd.read_csv('Modified_UB_BC_Algorithm/UBBC/data/dist_case.csv',header=0,index_col=0)
+dist = pd.read_csv('efficiency_data/dist_13e.csv',header=0,index_col=0)
 dist = dist.applymap(np.abs)
 
 # input demand data
 #f_data = read_data('f_data.csv')
 
-with open('Modified_UB_BC_Algorithm/UBBC/data/case_flow_S_50_0.30.json', 'r') as file:
+with open('efficiency_data/demand_flow_S_13e.json', 'r') as file:
     json_data_fS = json.load(file)
 fS = {eval(k): v for k, v in json_data_fS.items()}
 
-with open('Modified_UB_BC_Algorithm/UBBC/data/case_flow_L_50_0.30.json', 'r') as file:
+with open('efficiency_data/demand_flow_L_13e.json', 'r') as file:
     json_data_fL = json.load(file)
 fL = {eval(k): v for k, v in json_data_fL.items()}
 
@@ -618,49 +618,49 @@ def BuildDEPgpt(num_scenario,prob):
 
 
 
-# def main():
-#     print('Begin Solving')
-#     #ucnbc sol:
-#     XS=[ 6., -0., 21., 19., 17., 21., 17., 15.,  1.,  6., -0.]
-#     XL=[-0., 21.,  0.,  2.,  4.,  0.,  4.,  6., 20., -0., -0.]
+def main():
+    print('Begin Solving')
+    #ucnbc sol:
+    XS=[ 6., -0., 21., 19., 17., 21., 17., 15.,  1.,  6., -0.]
+    XL=[-0., 21.,  0.,  2.,  4.,  0.,  4.,  6., 20., -0., -0.]
 
-#     #subP,yS, yL, yS_h, yL_h, wS, wL, zS, zL=BuildBaseP(1,XS,XL)
-#     #start_time = time.time()
-#     #testP=BuildSubP(0,XS,XL)
-#     #testP.update()
-#     #build_time = time.time()-start_time
+    #subP,yS, yL, yS_h, yL_h, wS, wL, zS, zL=BuildBaseP(1,XS,XL)
+    #start_time = time.time()
+    #testP=BuildSubP(0,XS,XL)
+    #testP.update()
+    #build_time = time.time()-start_time
 
-#     # 设置启发式参数
-#     '''subP.setParam('Heuristics', 1.0)  # 启发式的权重设置为最大
-#     subP.setParam('Cuts', 0)          # 禁用切割平面
-#     subP.setParam('Presolve', 0)      # 禁用预求解
-#     subP.setParam('MIPFocus', 1)      # 优先寻找可行解
-#     subP.setParam('Symmetry', 0)      # 禁用对称性检测
-#     subP.setParam('VarBranch', 0)     # 禁用变量分支
-#     subP.setParam('NodeLimit', 1)     # 只探索一个节点
-#     subP.setParam('SolutionLimit', 1)     # 只寻找一个可行解
-#     subP.setParam('DualReductions', 0)    # 禁用对偶约简'''
-#     model = BuildRelaxP(0,XS,XL)
-#     print('finish build')
-#     model.setParam('Method', 2)  # 对偶单纯形法
-#     model.setParam('Presolve', 2)  # 激进预处理
-#     #model.setParam('Threads', 4)  # 4 个线程
-#     model.setParam('OptimalityTol', 1e-8)
-#     #model.setParam('IterationLimit', 100000)
-#     #model.setParam('TimeLimit', 3600)  # 1 小时
-#     model.setParam('FeasibilityTol', 1e-5)
-#     model.setParam('ScaleFlag', 1)  # 保守缩放
-#     model.setParam('DualReductions', 0)  # 关闭对偶缩减
-#     model.setParam('OutputFlag', 1)  # 开启日志
-#     #model.setParam('Heuristics', 0)
-#     #model.setParam('MIPGap', 0.0005)  # 设置允许的最小相对MIP Gap为5%
-#     model.optimize()
-#     for n,station in enumerate(stations):
-#         model._XconstrS[station].RHS = XS1[n]
-#         model._XconstrL[station].RHS = XL1[n]
-#     model.reset()
-#     model.optimize()
-#     #solve_time = time.time()-start_time
+    # 设置启发式参数
+    '''subP.setParam('Heuristics', 1.0)  # 启发式的权重设置为最大
+    subP.setParam('Cuts', 0)          # 禁用切割平面
+    subP.setParam('Presolve', 0)      # 禁用预求解
+    subP.setParam('MIPFocus', 1)      # 优先寻找可行解
+    subP.setParam('Symmetry', 0)      # 禁用对称性检测
+    subP.setParam('VarBranch', 0)     # 禁用变量分支
+    subP.setParam('NodeLimit', 1)     # 只探索一个节点
+    subP.setParam('SolutionLimit', 1)     # 只寻找一个可行解
+    subP.setParam('DualReductions', 0)    # 禁用对偶约简'''
+    model = BuildRelaxP(0,XS,XL)
+    print('finish build')
+    model.setParam('Method', 2)  # 对偶单纯形法
+    model.setParam('Presolve', 2)  # 激进预处理
+    #model.setParam('Threads', 4)  # 4 个线程
+    model.setParam('OptimalityTol', 1e-8)
+    #model.setParam('IterationLimit', 100000)
+    #model.setParam('TimeLimit', 3600)  # 1 小时
+    model.setParam('FeasibilityTol', 1e-5)
+    model.setParam('ScaleFlag', 1)  # 保守缩放
+    model.setParam('DualReductions', 0)  # 关闭对偶缩减
+    model.setParam('OutputFlag', 1)  # 开启日志
+    #model.setParam('Heuristics', 0)
+    #model.setParam('MIPGap', 0.0005)  # 设置允许的最小相对MIP Gap为5%
+    model.optimize()
+    for n,station in enumerate(stations):
+        model._XconstrS[station].RHS = XS1[n]
+        model._XconstrL[station].RHS = XL1[n]
+    model.reset()
+    model.optimize()
+    #solve_time = time.time()-start_time
 
 
                             
