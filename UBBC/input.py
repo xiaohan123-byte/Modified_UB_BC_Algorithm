@@ -14,8 +14,8 @@ num_scenario = 20
 prob = (0.05,0.05)*10  # 每个scenario的概率都是0.1
 
 I=21  #电池数量上限
-cS = 200 #初始200，300gurobi差 标准续航电池的配置费用
-cL = 250 #初始250，350gurobi差 长续航电池的配置费用
+cS = 300 #初始200，300gurobi差 标准续航电池的配置费用
+cL = 350 #初始250，350gurobi差 长续航电池的配置费用
 alpha = 300 #初始300
 beta = 25 #charging power
 gamma = 15 
@@ -28,8 +28,8 @@ max_tau=12 # ？
 SwapPriceS = tuple((x+0.5)*75 for x in E) #标准续航电池在每个时间段的换电费
 SwapPriceL = tuple((x+0.5)*100 for x in E) #长续航电池在每个时间段的换电费
 
-stations = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11']
-#stations = ['s1','s2','s3','s4','s5','s6']
+#stations = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11']
+stations = ['s1','s2','s3','s4','s5','s6']
 
 XSbar = {}
 XLbar = {}
@@ -42,20 +42,20 @@ T_matrix = -np.eye(2*len(stations))
 #print(T_matrix)
 
 # 从文件读取
-with open('efficiency_data\data_13e.json', 'r') as f:
+with open('efficiency_data/data_6e.json', 'r') as f:
     path_data = json.load(f)
 #print(path_data)
-dist = pd.read_csv('efficiency_data\dist_13e.csv',header=0,index_col=0)
+dist = pd.read_csv('efficiency_data/dist_6e.csv',header=0,index_col=0)
 dist = dist.applymap(np.abs)
 
 # input demand data
 #f_data = read_data('f_data.csv')
 
-with open('efficiency_data\demand_flow_S_13e.json', 'r') as file:
+with open('efficiency_data/demand_flow_S_6e.json', 'r') as file:
     json_data_fS = json.load(file)
 fS = {eval(k): v for k, v in json_data_fS.items()}
 
-with open('efficiency_data\demand_flow_L_13e.json', 'r') as file:
+with open('efficiency_data/demand_flow_L_6e.json', 'r') as file:
     json_data_fL = json.load(file)
 fL = {eval(k): v for k, v in json_data_fL.items()}
 

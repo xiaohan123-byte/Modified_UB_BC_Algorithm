@@ -37,7 +37,7 @@ class UBnBC:
         self,
         int_tol: float = 1e-6,   # 容差
         max_iter: int = 10000,   # 最大迭代次数
-        verbose: bool = True     # 控制是否输出中间过程
+        verbose: bool = False     # 控制是否输出中间过程
     ):
         
         # Start Timer
@@ -397,15 +397,21 @@ def numerical_efficiency(num):
         y_opt = model.objVal
         XS_sol = [ model.getVarByName(f'XS[{i}]').x for i in S]
         XL_sol = [ model.getVarByName(f'XL[{i}]').x for i in S]
-        GAP = 0
+        print("gurobi optim")
+        GAP = model.MIPGap
+
     elif model.status == GRB.TIME_LIMIT:
         y_opt = model.objVal
         XS_sol = [ model.getVarByName(f'XS[{i}]').x for i in S]
         XL_sol = [ model.getVarByName(f'XL[{i}]').x for i in S]
+        print("gurobi time limit")
         GAP = model.MIPGap
     gurobi_result = y_opt,XS_sol,XL_sol,GAP,endtime-starttime
 
-    return gurobi_result,alg_result
+    alogorithm_gap = (gurobi_result[0]-alg_result[0])/(gurobi_result[0])
+
+    return gurobi_result,alg_result,alogorithm_gap
+
 
 def numerical_compare(num):
     global num_scenario
@@ -466,6 +472,9 @@ if __name__ == "__main__":
     test1 = UBnBC(branching_rule='frac',node_rule='dfs')
     print(test1(max_iter=10000))'''
 
-    test1 = UBnBC(branching_rule='frac',node_rule='dfs')
-    print(test1(max_iter=10000))
+    # test1 = UBnBC(branching_rule='frac',node_rule='dfs')
+    # print(test1(max_iter=10000))
+    
+    print(numerical_efficiency(10))
+
     
