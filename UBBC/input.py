@@ -23,7 +23,7 @@ E = (0.5,0.5,0.5,0.5,0.5,0.5,0.9,0.9,1.4,1.4,1.4,1.4,1.4,1.4,1.4,0.9,0.9,0.9,1.4
 
 KS =3 #标准电池的电池容量
 KL =4 #长电池的电池容量
-TimePeriods = 36#本来是36  
+TimePeriods = 24#本来是36  
 max_tau=12 # ？
 SwapPriceS = tuple((x+0.5)*75 for x in E) #标准续航电池在每个时间段的换电费
 SwapPriceL = tuple((x+0.5)*100 for x in E) #长续航电池在每个时间段的换电费
@@ -42,20 +42,20 @@ T_matrix = -np.eye(2*len(stations))
 #print(T_matrix)
 
 # 从文件读取
-with open('efficiency_data/data_13e.json', 'r') as f:
+with open('efficiency_data\data_13e.json', 'r') as f:
     path_data = json.load(f)
 #print(path_data)
-dist = pd.read_csv('efficiency_data/dist_13e.csv',header=0,index_col=0)
+dist = pd.read_csv('efficiency_data\dist_13e.csv',header=0,index_col=0)
 dist = dist.applymap(np.abs)
 
 # input demand data
 #f_data = read_data('f_data.csv')
 
-with open('efficiency_data/demand_flow_S_13e.json', 'r') as file:
+with open('efficiency_data\demand_flow_S_13e.json', 'r') as file:
     json_data_fS = json.load(file)
 fS = {eval(k): v for k, v in json_data_fS.items()}
 
-with open('efficiency_data/demand_flow_L_13e.json', 'r') as file:
+with open('efficiency_data\demand_flow_L_13e.json', 'r') as file:
     json_data_fL = json.load(file)
 fL = {eval(k): v for k, v in json_data_fL.items()}
 
