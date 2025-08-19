@@ -151,7 +151,8 @@ class UBnBC:
                 ySP_opt=[]   #记录每个子问题的线性松弛问题的目标函数值
                 sum_yrelaxSP=0 #记录每个场景下子问题的加权目标和
                 SPstart_time = time.time() #记录所有场景线性松弛子问题的求解时间
-                print('Start Solve SP relaxation')
+                if verbose:
+                    print('Start Solve SP relaxation')
                 OptCut={}  # 最优割集
                 for i in range(num_scenario):
                     yrelaxSP,pi = self.solve_relaxP(i,node.XS,node.XL) #求解每个场景的线性松弛子问题
@@ -161,7 +162,8 @@ class UBnBC:
                         flag_optimality = 0
                         #OptCut[i]=[yrelaxSP,pi]
                 SPend_time = time.time() 
-                print('Solve SP relaxation time:',SPend_time-SPstart_time)
+                if verbose:
+                    print('Solve SP relaxation time:',SPend_time-SPstart_time)
                 
                 if flag_optimality==0:
                     if verbose:
@@ -202,12 +204,16 @@ class UBnBC:
                             # 如果最优下界更新了，记录最小的improved_lb解，求子问题到整数最优
                             if improved_lb < min_improved_lb:
                                 min_improved_lb = improved_lb
+                                print(f"improved_lb:{improved_lb}")
+
                                 min_solution = Z.pop(0)
                                 ysubP=solve_subP(min_solution[0],min_solution[1])
                                 cur_opt=min_solution[3]+ysubP
                                 if cur_opt<=self.ub:
                                     self.ub=cur_opt
                                     self.XS_opt,self.XL_opt=min_solution[0],min_solution[1]
+                                    print(f"cur_opt:{cur_opt}")
+
                             else:
                                 #Solve subproblem for all scenario
                                 sum_yH=0
@@ -472,9 +478,9 @@ if __name__ == "__main__":
     test1 = UBnBC(branching_rule='frac',node_rule='dfs')
     print(test1(max_iter=10000))'''
 
-    # test1 = UBnBC(branching_rule='frac',node_rule='dfs')
-    # print(test1(max_iter=10000))
+    test1 = UBnBC(branching_rule='frac',node_rule='dfs')
+    print(test1(max_iter=10000))
     
-    print(numerical_efficiency(10))
+   #  print(numerical_efficiency(20))
 
     
